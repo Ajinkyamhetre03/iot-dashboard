@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#3B82F6',
+                        'active': '#10B981',
+                        'dark': '#1F2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        .device-card {
+            transition: transform 0.3s ease;
+        }
+
+        .device-card:hover {
+            transform: scale(1.05);
+        }
+
+        .device-toggle:checked+.device-label {
+            background-color: #10B981 !important;
+            color: white !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 50;
+        }
+
+        /* Project Description Modal Styles */
+        .project-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .project-modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .dark .project-modal-content {
+            background-color: #1F2937;
+            color: white;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Back button styles */
+        .back-button {
+        position: fixed;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;}
+        .back-button:hover {
+            background-color: #3B82F6;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-300">
+    <!-- Back Button (Centered on Left) -->
+    <a href="/" class="back-button flex items-center justify-center bg-primary dark:bg-gray-700 text-white p-3 rounded-full hover:bg-blue-600 dark:hover:bg-gray-600 transition shadow-lg">
+        <i class="fas fa-arrow-left text-xl"></i>
+    </a>
+
+    <!-- Navbar -->
+    <nav class="bg-primary dark:bg-gray-800 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fas fa-home mr-3 text-2xl"></i>
+                <h1 class="text-xl font-bold">Smart Home Control <%= mqttData.ajinkya || null %></h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="project-info-btn" class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-4 py-2 rounded transition text-gray-800 dark:text-white">
+                    <i class="fas fa-info-circle mr-2"></i>Project Info
+                </button>
+                <h2 class="text-xl text-700">Welcome, <%= email %></h2>
+                <button id="theme-toggle"
+                    class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center">
+                    <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
+                </button>
+                <a href="/logout" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <div class="grid grid-cols-1 gap-8">
+            <!-- Hall Section -->
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+                <h3 class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center">
+                    <i class="fas fa-home mr-3"></i>Hall
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <% [ {name: 'Main Light' , icon: 'lightbulb' }, {name: 'Ceiling Fan' , icon: 'fan' },
+                        {name: 'Wall Lamp' , icon: 'sun' }, {name: 'Socket' , icon: 'plug' } ].forEach(function(device,
+                        index) { %>
+                        <div class="device-card relative">
+                            <input type="checkbox" id="hall-<%= index + 1 %>" class="hidden device-toggle"
+                                onchange="toggleDevice('hall', <%= index + 1 %>, this.checked)">
+                            <label for="hall-<%= index + 1 %>"
+                                class="device-label block cursor-pointer rounded-lg p-4 text-center transition-all duration-300 
+                                          bg-gray-200 dark:bg-gray-700 hover:bg-primary hover:text-white dark:hover:bg-blue-600">
+                                <i class="fas fa-<%= device.icon %> text-4xl mb-2 block"></i>
+                                <%= device.name %>
+                            </label>
+                        </div>
+                        <% }); %>
+                </div>
+            </div>
+
+            <!-- Bedroom Section -->
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+                <h3 class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center">
+                    <i class="fas fa-bed mr-3"></i>Bedroom
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <% [ {name: 'Bedside Lamp' , icon: 'bed' }, {name: 'Wardrobe Light' , icon: 'door-open' },
+                        {name: 'AC' , icon: 'snowflake' }, {name: 'Ceiling Light' , icon: 'sun' }
+                        ].forEach(function(device, index) { %>
+                        <div class="device-card relative">
+                            <input type="checkbox" id="bedroom-<%= index + 1 %>" class="hidden device-toggle"
+                                onchange="toggleDevice('bedroom', <%= index + 1 %>, this.checked)">
+                            <label for="bedroom-<%= index + 1 %>"
+                                class="device-label block cursor-pointer rounded-lg p-4 text-center transition-all duration-300 
+                                          bg-gray-200 dark:bg-gray-700 hover:bg-primary hover:text-white dark:hover:bg-blue-600">
+                                <i class="fas fa-<%= device.icon %> text-4xl mb-2 block"></i>
+                                <%= device.name %>
+                            </label>
+                        </div>
+                        <% }); %>
+                </div>
+            </div>
+
+            <!-- Kitchen Section -->
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+                <h3 class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center">
+                    <i class="fas fa-utensils mr-3"></i>Kitchen
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <% [ {name: 'Refrigerator' , icon: 'fan' }, {name: 'Oven Light' , icon: 'fire' }, {name: 'Socket' ,
+                        icon: 'plug' }, {name: 'Exhaust Fan' , icon: 'wind' } ].forEach(function(device, index) { %>
+                        <div class="device-card relative">
+                            <input type="checkbox" id="kitchen-<%= index + 1 %>" class="hidden device-toggle"
+                                onchange="toggleDevice('kitchen', <%= index + 1 %>, this.checked)">
+                            <label for="kitchen-<%= index + 1 %>"
+                                class="device-label block cursor-pointer rounded-lg p-4 text-center transition-all duration-300 
+                                          bg-gray-200 dark:bg-gray-700 hover:bg-primary hover:text-white dark:hover:bg-blue-600">
+                                <i class="fas fa-<%= device.icon %> text-4xl mb-2 block"></i>
+                                <%= device.name %>
+                            </label>
+                        </div>
+                        <% }); %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Indicator -->
+        <div id="status-indicator" class="status-indicator">
+            Device status updated
+        </div>
+    </main>
+
+    <!-- Project Description Modal -->
+    <div id="project-modal" class="project-modal">
+        <div class="project-modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Smart Home Control Project</h2>
+            <div class="space-y-4 text-gray-700 dark:text-gray-300">
+                <p>This project is a comprehensive smart home control system that allows users to remotely manage various devices in their home through an intuitive web interface.</p>
+                
+                <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-white">Features:</h3>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>Control lighting, fans, and electrical appliances across multiple rooms</li>
+                    <li>Real-time device status updates via WebSocket and MQTT</li>
+                    <li>User authentication and session management</li>
+                    <li>Dark/light theme toggle with persistent user preferences</li>
+                    <li>Responsive design for mobile and desktop devices</li>
+                </ul>
+                
+                <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-white">Technology Stack:</h3>
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>Frontend: HTML, CSS (Tailwind CSS), JavaScript (jQuery)</li>
+                    <li>Backend: Node.js with Express</li>
+                    <li>Real-time Communication: Socket.IO and MQTT</li>
+                    <li>Authentication: Express session management</li>
+                </ul>
+                
+                <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-white">How It Works:</h3>
+                <p>The dashboard communicates with IoT devices through an MQTT broker. When you toggle a device in the interface, it sends a command through the server to the corresponding physical device. The system also receives status updates from the devices to ensure the interface always shows their current state.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark dark:bg-black text-white py-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <p>&copy; 2025 Smart Home Dashboard. All rights reserved.</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const socket = io();
+
+        socket.on('connect', () => {
+            console.log('✅ Socket connected');
+        });
+
+        socket.on('mqttUpdate', ({ topic, message }) => {
+            console.log('📡 Received update:', topic, message);
+
+            if (topic === 'ajinkya') {
+                document.getElementById('ajinkyaVal').textContent = message;
+            } else if (topic === 'mhetre') {
+                document.getElementById('mhetreVal').textContent = message;
+            }
+        });
+    </script>
+
+    <script>
+        // Theme Toggle Functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        // Check for saved theme preference or system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        }
+
+        // Initial theme setup
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (systemPrefersDark.matches) {
+            setTheme('dark');
+        }
+
+        // Theme toggle event listener
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
+        function toggleDevice(section, device, state) {
+            $.ajax({
+                url: '/dashboard/smartHome',
+                method: 'POST',
+                data: {
+                    section: section,
+                    device: device,
+                    state: state ? 'on' : 'off'
+                },
+                success: function (response) {
+                    $('#status-indicator')
+                        .text(`${section} device ${device} turned ${state ? 'on' : 'off'}`)
+                        .fadeIn()
+                        .delay(3000)
+                        .fadeOut();
+                },
+                error: function () {
+                    $('#status-indicator')
+                        .text('Error updating device')
+                        .addClass('bg-red-500')
+                        .fadeIn()
+                        .delay(3000)
+                        .fadeOut();
+                }
+            });
+        }
+
+        // Project Description Modal Functionality
+        const projectModal = document.getElementById('project-modal');
+        const projectInfoBtn = document.getElementById('project-info-btn');
+        const closeModal = document.querySelector('.close-modal');
+
+        projectInfoBtn.addEventListener('click', () => {
+            projectModal.style.display = 'block';
+        });
+
+        closeModal.addEventListener('click', () => {
+            projectModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target === projectModal) {
+                projectModal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+
+</html>

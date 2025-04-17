@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Temperature & Humidity Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gauge.js/1.3.7/gauge.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3B82F6",
+              active: "#10B981",
+              dark: "#1F2937",
+            },
+          },
+        },
+      };
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      .gauge-container {
+        width: 200px;
+        height: 200px;
+        margin: 0 auto;
+        position: relative;
+      }
+
+      .gauge-value {
+        position: absolute;
+        bottom: 40px;
+        width: 100%;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .gauge-label {
+        position: absolute;
+        bottom: 15px;
+        width: 100%;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .status-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        display: none;
+        z-index: 50;
+      }
+
+      .chart-container {
+        height: 300px; 
+        width: 100%;
+      }
+
+      .back-button {
+        position: fixed;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;}
+        .back-button:hover {
+            background-color: #3B82F6;
+        }
+    </style>
+  </head>
+
+  <body
+    class="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-300"
+  >
+  <a href="/" class="back-button flex items-center justify-center bg-primary dark:bg-gray-700 text-white p-3 rounded-full hover:bg-blue-600 dark:hover:bg-gray-600 transition shadow-lg">
+    <i class="fas fa-arrow-left text-xl"></i>
+</a>
+    <!-- Navbar -->
+    <nav class="bg-primary dark:bg-gray-800 text-white p-4 shadow-md">
+      <div class="container mx-auto flex justify-between items-center">
+        <div class="flex items-center">
+          <i class="fas fa-temperature-high mr-3 text-2xl"></i>
+          <h1 class="text-xl font-bold">Temperature & Humidity Monitor</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <h2 class="text-xl text-700">Welcome, <%= email %></h2>
+          <button
+            id="theme-toggle"
+            class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center"
+          >
+            <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
+          </button>
+          <a
+            href="/logout"
+            class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition"
+          >
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 flex-grow">
+      <!-- Chart Section -->
+      <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8">
+        <h3 class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center justify-center">
+          <i class="fas fa-chart-line mr-3"></i>Temperature & Humidity History
+        </h3>
+        <div class="chart-container">
+          <canvas id="dht-chart"></canvas>
+        </div>
+        <div class="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
+          Last updated: <span id="chart-last-updated">--</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Temperature Gauge Section -->
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+          <h3
+            class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center justify-center"
+          >
+            <i class="fas fa-thermometer-half mr-3"></i>Temperature
+          </h3>
+          <div class="gauge-container">
+            <canvas id="temperature-gauge"></canvas>
+            <div
+              id="temperature-value"
+              class="gauge-value text-gray-700 dark:text-gray-200"
+            >
+              -- °C
+            </div>
+            <div class="gauge-label text-gray-500 dark:text-gray-400">
+              Temperature
+            </div>
+          </div>
+          <div
+            class="text-center mt-4 text-sm text-gray-500 dark:text-gray-400"
+          >
+            Last updated: <span id="temp-last-updated">--</span>
+          </div>
+        </div>
+
+        <!-- Humidity Gauge Section -->
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+          <h3
+            class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center justify-center"
+          >
+            <i class="fas fa-tint mr-3"></i>Humidity
+          </h3>
+          <div class="gauge-container">
+            <canvas id="humidity-gauge"></canvas>
+            <div
+              id="humidity-value"
+              class="gauge-value text-gray-700 dark:text-gray-200"
+            >
+              -- %
+            </div>
+            <div class="gauge-label text-gray-500 dark:text-gray-400">
+              Humidity
+            </div>
+          </div>
+          <div
+            class="text-center mt-4 text-sm text-gray-500 dark:text-gray-400"
+          >
+            Last updated: <span id="humidity-last-updated">--</span>
+          </div>
+        </div>
+
+        <!-- Fan Control Section -->
+        <div
+          class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 flex flex-col justify-center items-center"
+        >
+          <h3
+            class="text-2xl font-semibold mb-8 text-primary dark:text-blue-300 flex items-center justify-center"
+          >
+            <i class="fas fa-fan mr-3"></i>Fan Control
+          </h3>
+
+          <!-- Fan Button -->
+          <button
+            id="fan-toggle"
+            class="bg-blue-500 hover:bg-blue-600 text-white text-xl py-6 px-10 rounded-lg shadow-lg flex items-center transition-all"
+          >
+            <i class="fas fa-fan mr-3 text-2xl"></i>
+            <span id="fan-status">Turn Fan On</span>
+          </button>
+          <div
+            class="text-center mt-8 text-sm text-gray-500 dark:text-gray-400"
+          >
+            Status: <span id="fan-current-status">Off</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Indicator -->
+      <div id="status-indicator" class="status-indicator">Status updated</div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark dark:bg-black text-white py-6 mt-8">
+      <div class="container mx-auto flex justify-between items-center">
+        <div>
+          <p>&copy; 2025 Temperature & Humidity Dashboard. All rights reserved.</p>
+        </div>
+        <div class="flex space-x-4">
+          <a href="#" class="hover:text-primary transition">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="#" class="hover:text-primary transition">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="#" class="hover:text-primary transition">
+            <i class="fab fa-instagram"></i>
+          </a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Initialize Socket.io connection
+      const socket = io();
+      let fanActive = false;
+      let temperatureData = [];
+      let humidityData = [];
+      let timeLabels = [];
+      const maxDataPoints = 20;
+
+      // Initialize Chart
+      const ctx = document.getElementById('dht-chart').getContext('2d');
+      const dhtChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timeLabels,
+          datasets: [
+            {
+              label: 'Temperature (°C)',
+              data: temperatureData,
+              borderColor: 'rgb(255, 99, 132)',
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              tension: 0.4,
+              yAxisID: 'y-temperature'
+            },
+            {
+              label: 'Humidity (%)',
+              data: humidityData,
+              borderColor: 'rgb(54, 162, 235)',
+              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+              tension: 0.4,
+              yAxisID: 'y-humidity'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Time'
+              },
+              ticks: {
+                color: document.documentElement.classList.contains('dark') ? 'white' : 'black'
+              },
+              grid: {
+                color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              }
+            },
+            'y-temperature': {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Temperature (°C)'
+              },
+              ticks: {
+                color: document.documentElement.classList.contains('dark') ? 'white' : 'black'
+              },
+              grid: {
+                color: document.documentElement.classList.contains('dark') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              }
+            },
+            'y-humidity': {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              title: {
+                display: true,
+                text: 'Humidity (%)'
+              },
+              ticks: {
+                color: document.documentElement.classList.contains('dark') ? 'white' : 'black'
+              },
+              grid: {
+                drawOnChartArea: false,
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                color: document.documentElement.classList.contains('dark') ? 'white' : 'black'
+              }
+            }
+          }
+        }
+      });
+
+      socket.on("connect", () => {
+        console.log("✅ Socket connected");
+      });
+
+      // Initialize temperature gauge
+      const tempGauge = new Gauge(
+        document.getElementById("temperature-gauge")
+      ).setOptions({
+        angle: 0,
+        lineWidth: 0.44,
+        radiusScale: 1,
+        pointer: {
+          length: 0.6,
+          strokeWidth: 0.035,
+          color: "#000000",
+        },
+        limitMax: false,
+        limitMin: false,
+        colorStart: '#FF6384',
+        colorStop: '#FF6384',
+        strokeColor: "#E0E0E0",
+        generateGradient: true,
+        highDpiSupport: true,
+        staticLabels: {
+          font: "12px sans-serif",
+          labels: [0, 10, 20, 30, 40, 50],
+          color: "#000000",
+          fractionDigits: 0,
+        },
+        staticZones: [
+          { strokeStyle: "#3B82F6", min: 0, max: 10 }, // Cold
+          { strokeStyle: "#10B981", min: 10, max: 25 }, // Comfortable
+          { strokeStyle: "#FFDD57", min: 25, max: 35 }, // Warm
+          { strokeStyle: "#F03E3E", min: 35, max: 50 }, // Hot
+        ],
+      });
+      tempGauge.maxValue = 50;
+      tempGauge.setMinValue(0);
+      tempGauge.animationSpeed = 32;
+      tempGauge.set(0);
+
+      // Initialize humidity gauge
+      const humidityGauge = new Gauge(
+        document.getElementById("humidity-gauge")
+      ).setOptions({
+        angle: 0,
+        lineWidth: 0.44,
+        radiusScale: 1,
+        pointer: {
+          length: 0.6,
+          strokeWidth: 0.035,
+          color: "#000000",
+        },
+        limitMax: false,
+        limitMin: false,
+        colorStart: '#36A2EB',
+        colorStop: '#36A2EB',
+        strokeColor: "#E0E0E0",
+        generateGradient: true,
+        highDpiSupport: true,
+        staticLabels: {
+          font: "12px sans-serif",
+          labels: [0, 20, 40, 60, 80, 100],
+          color: "#000000",
+          fractionDigits: 0,
+        },
+        staticZones: [
+          { strokeStyle: "#F03E3E", min: 0, max: 20 }, // Very dry
+          { strokeStyle: "#FFDD57", min: 20, max: 40 }, // Dry
+          { strokeStyle: "#10B981", min: 40, max: 70 }, // Comfortable
+          { strokeStyle: "#3B82F6", min: 70, max: 100 }, // Humid
+        ],
+      });
+      humidityGauge.maxValue = 100;
+      humidityGauge.setMinValue(0);
+      humidityGauge.animationSpeed = 32;
+      humidityGauge.set(0);
+
+      // Listen for DHT updates
+      socket.on("dht", (data) => {
+        console.log("📡 Received DHT update:", data);
+
+        if (data && typeof data === 'object') {
+          // Update temperature gauge and chart
+          if ('temperature' in data) {
+            const tempValue = parseFloat(data.temperature);
+            tempGauge.set(tempValue);
+            document.getElementById("temperature-value").textContent = `${tempValue.toFixed(1)} °C`;
+            
+            // Update chart data
+            const now = new Date();
+            const timeLabel = now.toLocaleTimeString();
+            
+            // Add new data
+            timeLabels.push(timeLabel);
+            temperatureData.push(tempValue);
+            if (data.humidity !== undefined) {
+              humidityData.push(parseFloat(data.humidity));
+            } else if (humidityData.length < temperatureData.length) {
+              // If humidity wasn't provided, use the last value or 0
+              humidityData.push(humidityData.length > 0 ? humidityData[humidityData.length - 1] : 0);
+            }
+            
+            // Limit the number of data points
+            if (timeLabels.length > maxDataPoints) {
+              timeLabels.shift();
+              temperatureData.shift();
+              humidityData.shift();
+            }
+            
+            // Update chart
+            dhtChart.update();
+            
+            // Update timestamp
+            document.getElementById("temp-last-updated").textContent = timeLabel;
+            document.getElementById("chart-last-updated").textContent = timeLabel;
+          }
+          
+          // Update humidity gauge
+          if ('humidity' in data) {
+            const humidityValue = parseFloat(data.humidity);
+            humidityGauge.set(humidityValue);
+            document.getElementById("humidity-value").textContent = `${humidityValue.toFixed(1)} %`;
+            document.getElementById("humidity-last-updated").textContent = new Date().toLocaleTimeString();
+            
+            // If we received humidity but not temperature (unusual case)
+            if (!('temperature' in data) && temperatureData.length === humidityData.length - 1) {
+              const now = new Date();
+              const timeLabel = now.toLocaleTimeString();
+              timeLabels.push(timeLabel);
+              temperatureData.push(temperatureData.length > 0 ? temperatureData[temperatureData.length - 1] : 0);
+              
+              // Limit the number of data points
+              if (timeLabels.length > maxDataPoints) {
+                timeLabels.shift();
+                temperatureData.shift();
+                humidityData.shift();
+              }
+              
+              // Update chart
+              dhtChart.update();
+            }
+          }
+
+          // Update fan status if present
+          if ('fan' in data) {
+            updateFanStatus(data.fan === 'on' || data.fan === true);
+          }
+        }
+      });
+
+      // Toggle Fan
+      document
+        .getElementById("fan-toggle")
+        .addEventListener("click", function () {
+          fanActive = !fanActive;
+          updateFanUI(fanActive);
+
+          // Send control message to server
+          $.ajax({
+            url: "/dashboard/dht",
+            method: "POST",
+            data: {
+              state: fanActive ? "on" : "off",
+            },
+            success: function (response) {
+              showStatus(fanActive ? "Fan turned on" : "Fan turned off");
+            },
+            error: function () {
+              showStatus(`Error ${fanActive ? "starting" : "stopping"} fan`, true);
+              // Revert UI state on error
+              fanActive = !fanActive;
+              updateFanUI(fanActive);
+            },
+          });
+        });
+
+      function updateFanUI(active) {
+        const button = document.getElementById("fan-toggle");
+        const statusText = document.getElementById("fan-status");
+        const currentStatus = document.getElementById("fan-current-status");
+
+        if (active) {
+          button.classList.remove("bg-blue-500", "hover:bg-blue-600");
+          button.classList.add("bg-red-500", "hover:bg-red-600");
+          statusText.textContent = "Turn Fan Off";
+          currentStatus.textContent = "On";
+          // Add fan animation class if desired
+          document.querySelector("#fan-toggle i").classList.add("fa-spin");
+        } else {
+          button.classList.remove("bg-red-500", "hover:bg-red-600");
+          button.classList.add("bg-blue-500", "hover:bg-blue-600");
+          statusText.textContent = "Turn Fan On";
+          currentStatus.textContent = "Off";
+          // Remove fan animation
+          document.querySelector("#fan-toggle i").classList.remove("fa-spin");
+        }
+      }
+
+      function updateFanStatus(active) {
+        fanActive = active;
+        updateFanUI(active);
+      }
+
+      // Theme Toggle Functionality
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeIcon = document.getElementById("theme-icon");
+
+      // Check for saved theme preference or system preference
+      const savedTheme = localStorage.getItem("theme");
+      const systemPrefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      );
+
+      function setTheme(theme) {
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+          localStorage.setItem("theme", "dark");
+          themeIcon.classList.remove("fa-moon");
+          themeIcon.classList.add("fa-sun");
+          
+          // Update chart colors for dark theme
+          updateChartTheme(true);
+        } else {
+          document.documentElement.classList.remove("dark");
+          localStorage.setItem("theme", "light");
+          themeIcon.classList.remove("fa-sun");
+          themeIcon.classList.add("fa-moon");
+          
+          // Update chart colors for light theme
+          updateChartTheme(false);
+        }
+      }
+
+      function updateChartTheme(isDark) {
+        dhtChart.options.scales.x.ticks.color = isDark ? 'white' : 'black';
+        dhtChart.options.scales.x.grid.color = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        dhtChart.options.scales['y-temperature'].ticks.color = isDark ? 'white' : 'black';
+        dhtChart.options.scales['y-temperature'].grid.color = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        dhtChart.options.scales['y-humidity'].ticks.color = isDark ? 'white' : 'black';
+        dhtChart.options.plugins.legend.labels.color = isDark ? 'white' : 'black';
+        dhtChart.update();
+      }
+
+      // Initial theme setup
+      if (savedTheme) {
+        setTheme(savedTheme);
+      } else if (systemPrefersDark.matches) {
+        setTheme("dark");
+      }
+
+      // Theme toggle event listener
+      themeToggle.addEventListener("click", () => {
+        const currentTheme = document.documentElement.classList.contains("dark")
+          ? "dark"
+          : "light";
+        setTheme(currentTheme === "dark" ? "light" : "dark");
+      });
+
+      // Status indicator function
+      function showStatus(message, isError = false) {
+        const indicator = document.getElementById("status-indicator");
+        indicator.textContent = message;
+
+        if (isError) {
+          indicator.classList.add("bg-red-500");
+        } else {
+          indicator.classList.remove("bg-red-500");
+        }
+
+        indicator.style.display = "block";
+        setTimeout(() => {
+          indicator.style.display = "none";
+        }, 3000);
+      }
+
+      // Initialize with initial data if available
+      const topic = "<%= topic %>";
+      const mqttData = <%- JSON.stringify(mqttData || {}) %>;
+      
+      if (mqttData && mqttData[topic] && typeof mqttData[topic] === 'object') {
+        const initialData = mqttData[topic];
+        
+        if ('temperature' in initialData) {
+          const tempValue = parseFloat(initialData.temperature);
+          tempGauge.set(tempValue);
+          document.getElementById("temperature-value").textContent = `${tempValue.toFixed(1)} °C`;
+          document.getElementById("temp-last-updated").textContent = "On load";
+          
+          // Add initial point to chart
+          timeLabels.push("Start");
+          temperatureData.push(tempValue);
+        }
+        
+        if ('humidity' in initialData) {
+          const humidityValue = parseFloat(initialData.humidity);
+          humidityGauge.set(humidityValue);
+          document.getElementById("humidity-value").textContent = `${humidityValue.toFixed(1)} %`;
+          document.getElementById("humidity-last-updated").textContent = "On load";
+          
+          // Add initial point to chart if not already added with temperature
+          if (humidityData.length === 0) {
+            if (timeLabels.length === 0) {
+              timeLabels.push("Start");
+            }
+            humidityData.push(humidityValue);
+          }
+        }
+        
+        // Make sure both datasets have the same length
+        while (humidityData.length < temperatureData.length) {
+          humidityData.push(0);
+        }
+        while (temperatureData.length < humidityData.length) {
+          temperatureData.push(0);
+        }
+        
+        // Update chart
+        dhtChart.update();
+        
+        // Set fan state if available
+        if ('fan' in initialData) {
+          updateFanStatus(initialData.fan === 'on' || initialData.fan === true);
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Soil Moisture Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gauge.js/1.3.7/gauge.min.js"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3B82F6",
+              active: "#10B981",
+              dark: "#1F2937",
+            },
+          },
+        },
+      };
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      .gauge-container {
+        width: 300px;
+        height: 300px;
+        margin: 0 auto;
+        position: relative;
+      }
+
+      .gauge-value {
+        position: absolute;
+        bottom: 50px;
+        width: 100%;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .status-indicator {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        display: none;
+        z-index: 50;
+      }
+      
+      /* Range slider styling */
+      input[type=range] {
+        width: 100%;
+        height: 10px;
+        border-radius: 5px;
+        -webkit-appearance: none;
+      }
+      
+      input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: #3B82F6;
+        cursor: pointer;
+      }
+
+      .back-button {
+        position: fixed;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;}
+        .back-button:hover {
+            background-color: #3B82F6;
+        }
+    </style>
+  </head>
+
+  <body
+    class="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-300"
+  >
+
+  <a href="/" class="back-button flex items-center justify-center bg-primary dark:bg-gray-700 text-white p-3 rounded-full hover:bg-blue-600 dark:hover:bg-gray-600 transition shadow-lg">
+    <i class="fas fa-arrow-left text-xl"></i>
+</a>
+    <!-- Navbar -->
+    <nav class="bg-primary dark:bg-gray-800 text-white p-4 shadow-md">
+      <div class="container mx-auto flex justify-between items-center">
+        <div class="flex items-center">
+          <i class="fas fa-seedling mr-3 text-2xl"></i>
+          <h1 class="text-xl font-bold">Soil Moisture Monitor</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <h2 class="text-xl text-700">Welcome, <%= email %></h2>
+          <button
+            id="theme-toggle"
+            class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center"
+          >
+            <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
+          </button>
+          <a
+            href="/logout"
+            class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition"
+          >
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 flex-grow">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Soil Moisture Gauge Section -->
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+          <h3
+            class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center justify-center"
+          >
+            <i class="fas fa-tint mr-3"></i>Soil Moisture Level
+          </h3>
+          <div class="gauge-container">
+            <canvas id="moisture-gauge"></canvas>
+            <div
+              id="gauge-value"
+              class="gauge-value text-gray-700 dark:text-gray-200"
+            >
+              --
+            </div>
+          </div>
+          <div
+            class="text-center mt-4 text-sm text-gray-500 dark:text-gray-400"
+          >
+            Last updated: <span id="last-updated">--</span>
+          </div>
+        </div>
+
+        <!-- Irrigation Control Section -->
+        <div class="flex flex-col">
+          <!-- Irrigation Button -->
+          <div
+            class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 flex flex-col justify-center items-center mb-6"
+          >
+            <h3
+              class="text-2xl font-semibold mb-8 text-primary dark:text-blue-300 flex items-center justify-center"
+            >
+              <i class="fas fa-faucet mr-3"></i>Irrigation Control
+            </h3>
+
+            <!-- Manual Irrigation Button -->
+            <button
+              id="irrigation-toggle"
+              class="bg-blue-500 hover:bg-blue-600 text-white text-xl py-6 px-10 rounded-lg shadow-lg flex items-center transition-all"
+            >
+              <i class="fas fa-faucet mr-3 text-2xl"></i>
+              <span id="irrigation-status">Start Irrigation</span>
+            </button>
+          </div>
+          
+          <!-- Alert Threshold Section -->
+          <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+            <h3
+              class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center justify-center"
+            >
+              <i class="fas fa-bell mr-3"></i>Alert Settings
+            </h3>
+            
+            <div class="mb-6">
+              <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">
+                Alert Threshold (%) - Get notified when moisture exceeds this level
+              </label>
+              <div class="flex items-center gap-4">
+                <input 
+                  type="range" 
+                  id="threshold-slider" 
+                  min="0" 
+                  max="100" 
+                  value="<%= threshold %>" 
+                  class="flex-grow"
+                >
+                <span 
+                  id="threshold-value" 
+                  class="text-lg font-semibold text-primary dark:text-blue-300 min-w-[3rem]"
+                >
+                  <%= threshold %>%
+                </span>
+              </div>
+            </div>
+            
+            <button
+              id="save-threshold"
+              class="bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg shadow-md flex items-center justify-center w-full"
+            >
+              <i class="fas fa-save mr-2"></i>Save Threshold
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Indicator -->
+      <div id="status-indicator" class="status-indicator">Status updated</div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark dark:bg-black text-white py-6 mt-8">
+      <div class="container mx-auto flex justify-between items-center">
+        <div>
+          <p>&copy; 2025 Soil Moisture Dashboard. All rights reserved.</p>
+        </div>
+        <div class="flex space-x-4">
+          <a href="#" class="hover:text-primary transition">
+            <i class="fab fa-facebook-f"></i>
+          </a>
+          <a href="#" class="hover:text-primary transition">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="#" class="hover:text-primary transition">
+            <i class="fab fa-instagram"></i>
+          </a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Initialize Socket.io connection
+      const socket = io();
+      let irrigationActive = false;
+
+      socket.on("connect", () => {
+        console.log("✅ Socket connected");
+      });
+
+      // Initialize gauge
+      const gauge = new Gauge(
+        document.getElementById("moisture-gauge")
+      ).setOptions({
+        angle: 0,
+        lineWidth: 0.44,
+        radiusScale: 1,
+        pointer: {
+          length: 0.6,
+          strokeWidth: 0.035,
+          color: "#000000",
+        },
+        limitMax: false,
+        limitMin: false,
+        colorStart: "#6FADCF",
+        colorStop: "#8FC0DA",
+        strokeColor: "#E0E0E0",
+        generateGradient: true,
+        highDpiSupport: true,
+        staticLabels: {
+          font: "12px sans-serif",
+          labels: [0, 25, 50, 75, 100],
+          color: "#000000",
+          fractionDigits: 0,
+        },
+        staticZones: [
+          { strokeStyle: "#F03E3E", min: 0, max: 20 }, // Dry
+          { strokeStyle: "#FFDD57", min: 20, max: 40 }, // Low
+          { strokeStyle: "#7BC96F", min: 40, max: 70 }, // Good
+          { strokeStyle: "#3B82F6", min: 70, max: 100 }, // Too wet
+        ],
+      });
+      gauge.maxValue = 100;
+      gauge.setMinValue(0);
+      gauge.animationSpeed = 32;
+      gauge.set(0);
+
+      // Listen for MQTT updates
+      socket.on("soilMoisture", ({ topic, message }) => {
+        console.log("📡 Received update:", topic, message);
+
+        const expectedTopic = "<%= topic %>"; // Replace with actual topic name
+
+        if (topic === expectedTopic) {
+          // Using topic for moisture data
+          const moistureValue = parseInt(message);
+
+          // Update gauge
+          gauge.set(moistureValue);
+          document.getElementById(
+            "gauge-value"
+          ).textContent = `${moistureValue}%`;
+
+          // Update last updated time
+          const now = new Date();
+          document.getElementById("last-updated").textContent =
+            now.toLocaleTimeString();
+        }
+      });
+
+      // Toggle Irrigation
+      document
+        .getElementById("irrigation-toggle")
+        .addEventListener("click", function () {
+          irrigationActive = !irrigationActive;
+          const button = document.getElementById("irrigation-toggle");
+          const statusText = document.getElementById("irrigation-status");
+
+          if (irrigationActive) {
+            button.classList.remove("bg-blue-500", "hover:bg-blue-600");
+            button.classList.add("bg-red-500", "hover:bg-red-600");
+            statusText.textContent = "Stop Irrigation";
+
+            // Send control message to server
+            $.ajax({
+              url: "/dashboard/soilMoisture",
+              method: "POST",
+              data: {
+                state: "on",
+              },
+              success: function (response) {
+                showStatus("Irrigation started");
+              },
+              error: function () {
+                showStatus("Error starting irrigation", true);
+              },
+            });
+          } else {
+            button.classList.remove("bg-red-500", "hover:bg-red-600");
+            button.classList.add("bg-blue-500", "hover:bg-blue-600");
+            statusText.textContent = "Start Irrigation";
+
+            // Send control message to server
+            $.ajax({
+              url: "/dashboard/soilMoisture",
+              method: "POST",
+              data: {
+                state: "off",
+              },
+              success: function (response) {
+                showStatus("Irrigation stopped");
+              },
+              error: function () {
+                showStatus("Error stopping irrigation", true);
+              },
+            });
+          }
+        });
+
+      // Threshold slider functionality
+      const thresholdSlider = document.getElementById('threshold-slider');
+      const thresholdValue = document.getElementById('threshold-value');
+      
+      thresholdSlider.addEventListener('input', function() {
+        thresholdValue.textContent = this.value + '%';
+      });
+      
+      // Save threshold button
+      document.getElementById('save-threshold').addEventListener('click', function() {
+        const newThreshold = thresholdSlider.value;
+        
+        $.ajax({
+          url: "/dashboard/update-threshold",
+          method: "POST",
+          data: {
+            threshold: newThreshold,
+          },
+          success: function(response) {
+            showStatus(`Alert threshold updated to ${newThreshold}%`);
+          },
+          error: function(xhr) {
+            const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : 'Error updating threshold';
+            showStatus(errorMsg, true);
+          }
+        });
+      });
+
+      // Theme Toggle Functionality
+      const themeToggle = document.getElementById("theme-toggle");
+      const themeIcon = document.getElementById("theme-icon");
+
+      // Check for saved theme preference or system preference
+      const savedTheme = localStorage.getItem("theme");
+      const systemPrefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      );
+
+      function setTheme(theme) {
+        if (theme === "dark") {
+          document.documentElement.classList.add("dark");
+          localStorage.setItem("theme", "dark");
+          themeIcon.classList.remove("fa-moon");
+          themeIcon.classList.add("fa-sun");
+        } else {
+          document.documentElement.classList.remove("dark");
+          localStorage.setItem("theme", "light");
+          themeIcon.classList.remove("fa-sun");
+          themeIcon.classList.add("fa-moon");
+        }
+      }
+
+      // Initial theme setup
+      if (savedTheme) {
+        setTheme(savedTheme);
+      } else if (systemPrefersDark.matches) {
+        setTheme("dark");
+      }
+
+      // Theme toggle event listener
+      themeToggle.addEventListener("click", () => {
+        const currentTheme = document.documentElement.classList.contains("dark")
+          ? "dark"
+          : "light";
+        setTheme(currentTheme === "dark" ? "light" : "dark");
+      });
+
+      // Status indicator function
+      function showStatus(message, isError = false) {
+        const indicator = document.getElementById("status-indicator");
+        indicator.textContent = message;
+
+        if (isError) {
+          indicator.classList.add("bg-red-500");
+        } else {
+          indicator.classList.remove("bg-red-500");
+        }
+
+        indicator.style.display = "block";
+        setTimeout(() => {
+          indicator.style.display = "none";
+        }, 3000);
+      }
+
+      // Initialize with initial data if available
+      const expectedTopics  = "<%= topic %>"; // Get the topic from the server
+      if (
+        typeof mqttMessages !== 'undefined' && 
+        typeof mqttMessages[expectedTopics] !== "undefined" &&
+        mqttMessages[expectedTopics] !== ""
+      ) {
+        const initialValue = parseInt(mqttMessages[expectedTopics]);
+        if (!isNaN(initialValue)) {
+          gauge.set(initialValue);
+          document.getElementById(
+            "gauge-value"
+          ).textContent = `${initialValue}%`;
+          document.getElementById("last-updated").textContent = "On load";
+        }
+      }
+    </script>
+  </body>
+</html>

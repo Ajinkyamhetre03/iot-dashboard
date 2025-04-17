@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found - IoT Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#3B82F6',
+                        'active': '#10B981',
+                        'dark': '#1F2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dashboard-link {
+            transition: all 0.3s ease;
+        }
+        .dashboard-link:hover {
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-300">
+    <!-- Navbar -->
+    <nav class="bg-primary dark:bg-gray-800 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fas fa-microchip mr-3 text-2xl"></i>
+                <h1 class="text-xl font-bold">IoT Control Center</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle"
+                    class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center">
+                    <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
+                </button>
+                <a href="/" class="hover:text-gray-300 px-3 py-2 transition">
+                    <i class="fas fa-home mr-2"></i>Home
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12 flex-grow flex items-center justify-center">
+        <div class="w-full max-w-2xl">
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden text-center">
+                <div class="p-8">
+                    <h1 class="text-primary dark:text-blue-300 text-8xl font-bold mb-4">404</h1>
+                    <h2 class="text-2xl font-semibold mb-6 dark:text-white">Page Not Found</h2>
+                    
+                    <div class="flex justify-center mb-8">
+                        <i class="fas fa-robot text-gray-400 dark:text-gray-500 text-8xl"></i>
+                    </div>
+                    
+                    <p class="text-lg text-gray-600 dark:text-gray-300 mb-2">The page you're looking for doesn't exist or has been moved.</p>
+                    <p class="text-gray-500 dark:text-gray-400 mb-8">Please check the URL or return to the dashboard home.</p>
+                    
+                    <div class="flex flex-wrap justify-center gap-4 mb-8">
+                        <a href="/" class="px-6 py-3 bg-primary hover:bg-blue-600 text-white rounded-lg transition">
+                            <i class="fas fa-home mr-2"></i>Back to Home
+                        </a>
+                        <button onclick="history.back()" class="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition">
+                            <i class="fas fa-arrow-left mr-2"></i>Go Back
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-10 text-center">
+                <h3 class="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-300">Looking for one of these dashboards?</h3>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <a href="/dashboard/rtls" 
+                       class="dashboard-link bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-md flex items-center text-primary dark:text-blue-300 hover:shadow-lg">
+                        <i class="fas fa-map-marker-alt mr-2"></i>RTLS
+                    </a>
+                    <a href="/dashboard/soil-moisture" 
+                       class="dashboard-link bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-md flex items-center text-primary dark:text-blue-300 hover:shadow-lg">
+                        <i class="fas fa-seedling mr-2"></i>Soil Moisture
+                    </a>
+                    <a href="/dashboard/mq2" 
+                       class="dashboard-link bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-md flex items-center text-primary dark:text-blue-300 hover:shadow-lg">
+                        <i class="fas fa-smog mr-2"></i>MQ2 Sensor
+                    </a>
+                    <a href="/dashboard/dht" 
+                       class="dashboard-link bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-md flex items-center text-primary dark:text-blue-300 hover:shadow-lg">
+                        <i class="fas fa-temperature-high mr-2"></i>DHT Sensor
+                    </a>
+                    <a href="/dashboard/pir" 
+                       class="dashboard-link bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-md flex items-center text-primary dark:text-blue-300 hover:shadow-lg">
+                        <i class="fas fa-walking mr-2"></i>PIR Motion
+                    </a>
+                    <a href="/dashboard/home-automation" 
+                       class="dashboard-link bg-white dark:bg-gray-800 px-4 py-3 rounded-lg shadow-md flex items-center text-primary dark:text-blue-300 hover:shadow-lg">
+                        <i class="fas fa-home mr-2"></i>Home Automation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark dark:bg-black text-white py-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <p>&copy; <%= new Date().getFullYear() %> IoT Dashboard. All rights reserved.</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Toggle Functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        // Check for saved theme preference or system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        }
+
+        // Initial theme setup
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (systemPrefersDark.matches) {
+            setTheme('dark');
+        }
+
+        // Theme toggle event listener
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+    </script>
+</body>
+
+</html>

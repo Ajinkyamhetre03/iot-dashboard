@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#3B82F6',
+                        'active': '#10B981',
+                        'dark': '#1F2937'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .dashboard-card {
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-card:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-300">
+    <!-- Navbar -->
+    <nav class="bg-primary dark:bg-gray-800 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <i class="fas fa-microchip mr-3 text-2xl"></i>
+                <h1 class="text-xl font-bold">IoT Control Center</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle"
+                    class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center">
+                    <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
+                </button>
+                <a href="/admin-dashboard" id="admin-btn"
+                    class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded transition hidden">
+                    <i class="fas fa-tools mr-2"></i>Admin Dashboard
+                </a>
+                <a href="/logout" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 mb-8">
+            <h1 class="text-3xl font-bold text-primary dark:text-blue-300 mb-4">Welcome <%= name %></h1>
+            <p class="text-gray-600 dark:text-gray-300">Select a dashboard to monitor and control your IoT devices.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Home Automation Dashboard -->
+            <div class="dashboard-card bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-primary dark:text-blue-300">
+                        <i class="fas fa-home text-3xl mr-3"></i>
+                        <h3 class="text-xl font-semibold">Home Automation</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">Control lights, appliances, and other home devices.</p>
+                    <a href="/dashboard/home-automation" 
+                       class="block w-full bg-primary hover:bg-blue-600 text-white text-center py-3 rounded-lg transition">
+                        <i class="fas fa-arrow-right mr-2"></i>Open Dashboard
+                    </a>
+                </div>
+            </div>
+            
+            <!-- RTLS Dashboard -->
+            <div class="dashboard-card bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-primary dark:text-blue-300">
+                        <i class="fas fa-map-marker-alt text-3xl mr-3"></i>
+                        <h3 class="text-xl font-semibold">RTLS</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">Real-Time Location System monitoring and tracking.</p>
+                    <a href="/dashboard/rtls" 
+                       class="block w-full bg-primary hover:bg-blue-600 text-white text-center py-3 rounded-lg transition">
+                        <i class="fas fa-arrow-right mr-2"></i>Open Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Soil Moisture Dashboard -->
+            <div class="dashboard-card bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-primary dark:text-blue-300">
+                        <i class="fas fa-seedling text-3xl mr-3"></i>
+                        <h3 class="text-xl font-semibold">Soil Moisture</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">Monitor soil moisture levels for optimal plant growth.</p>
+                    <a href="/dashboard/soil-moisture" 
+                       class="block w-full bg-primary hover:bg-blue-600 text-white text-center py-3 rounded-lg transition">
+                        <i class="fas fa-arrow-right mr-2"></i>Open Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- MQ2 Gas Sensor Dashboard -->
+            <div class="dashboard-card bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-primary dark:text-blue-300">
+                        <i class="fas fa-smog text-3xl mr-3"></i>
+                        <h3 class="text-xl font-semibold">MQ2 Gas Sensor</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">Monitor gas levels and detect potential hazards.</p>
+                    <a href="/dashboard/mq2" 
+                       class="block w-full bg-primary hover:bg-blue-600 text-white text-center py-3 rounded-lg transition">
+                        <i class="fas fa-arrow-right mr-2"></i>Open Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- DHT Sensor Dashboard -->
+            <div class="dashboard-card bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-primary dark:text-blue-300">
+                        <i class="fas fa-temperature-high text-3xl mr-3"></i>
+                        <h3 class="text-xl font-semibold">DHT Sensor</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">Temperature and humidity monitoring system.</p>
+                    <a href="/dashboard/dht" 
+                       class="block w-full bg-primary hover:bg-blue-600 text-white text-center py-3 rounded-lg transition">
+                        <i class="fas fa-arrow-right mr-2"></i>Open Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- PIR Motion Sensor Dashboard -->
+            <div class="dashboard-card bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-center mb-4 text-primary dark:text-blue-300">
+                        <i class="fas fa-walking text-3xl mr-3"></i>
+                        <h3 class="text-xl font-semibold">PIR Motion</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">Motion detection and security monitoring.</p>
+                    <a href="/dashboard/pir" 
+                       class="block w-full bg-primary hover:bg-blue-600 text-white text-center py-3 rounded-lg transition">
+                        <i class="fas fa-arrow-right mr-2"></i>Open Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark dark:bg-black text-white py-6">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <p>&copy; <%= new Date().getFullYear() %> IoT Dashboard. All rights reserved.</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-instagram"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Toggle Functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        // Check for saved theme preference or system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        }
+
+        // Initial theme setup
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (systemPrefersDark.matches) {
+            setTheme('dark');
+        }
+
+        // Theme toggle event listener
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
+        const role = '<%= role %>'; // Assuming 'role' is passed from the server-side
+        // Show admin button if the user is an admin
+        if (role === 'admin') {
+        document.getElementById('admin-btn').classList.remove('hidden');
+        }
+    </script>
+</body>
+
+</html>

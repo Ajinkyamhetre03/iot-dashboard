@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time MQTT Position Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#3B82F6',
+                        'active': '#10B981',
+                        'dark': '#1F2937'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .status-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 50;
+        }
+        
+        .point {
+            width: 20px;
+            height: 20px;
+            position: absolute;
+            background: #FF4F58;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 79, 88, 0.7);
+            transition: all 0.5s ease;
+        }
+        
+        #grid {
+            position: relative;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 50px;
+            height: 50px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col transition-colors duration-300">
+
+    <a href="/" class="back-button flex items-center justify-center bg-primary dark:bg-gray-700 text-white p-3 rounded-full hover:bg-blue-600 dark:hover:bg-gray-600 transition shadow-lg">
+        <i class="fas fa-arrow-left text-xl"></i>
+    </a>
+      <!-- Navbar -->
+      <nav class="bg-primary dark:bg-gray-800 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+          <div class="flex items-center">
+            <i class="fas fa-map-marker-alt text-3xl mr-3"></i>
+            <h1 class="text-xl font-bold">RTLS</h1>
+          </div>
+          <div class="flex items-center space-x-4">
+            <h2 class="text-xl text-700">Welcome, <%= email %></h2>
+            <button
+              id="theme-toggle"
+              class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center"
+            >
+              <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
+            </button>
+            <a
+              href="/logout"
+              class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition"
+            >
+              <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </a>
+          </div>
+        </div>
+      </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Left Panel - Position Tracker -->
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+                <h3 class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center">
+                    <i class="fas fa-location-arrow mr-3"></i>Position Tracker
+                </h3>
+                <div class="flex justify-center mb-6">
+                    <div id="grid" class="w-96 h-96 border-2 border-primary dark:border-blue-400 bg-gray-50 dark:bg-gray-700 shadow-lg"></div>
+                </div>
+                <div id="coordinates" class="text-center font-semibold text-lg text-gray-700 dark:text-gray-300">
+                    Position: (X: 0, Y: 0)
+                </div>
+                <div id="out-of-bounds" class="text-center mt-2 text-red-500 font-medium"></div>
+            </div>
+            
+            <!-- Right Panel - Data & Statistics -->
+            <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
+                <h3 class="text-2xl font-semibold mb-6 text-primary dark:text-blue-300 flex items-center">
+                    <i class="fas fa-chart-line mr-3"></i>Data & Statistics
+                </h3>
+                
+                <!-- Current Position Card -->
+                <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow">
+                    <h4 class="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">Current Position</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                            <div class="text-sm text-blue-600 dark:text-blue-300">X Coordinate</div>
+                            <div id="x-value" class="text-2xl font-bold text-gray-800 dark:text-white">0.00</div>
+                        </div>
+                        <div class="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
+                            <div class="text-sm text-green-600 dark:text-green-300">Y Coordinate</div>
+                            <div id="y-value" class="text-2xl font-bold text-gray-800 dark:text-white">0.00</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Movement History Card -->
+                <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg shadow">
+                    <h4 class="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200">Movement History</h4>
+                    <div class="h-60 overflow-y-auto">
+                        <ul id="movement-history" class="divide-y divide-gray-200 dark:divide-gray-600">
+                            <!-- History items will be added here dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Status Indicator -->
+    <div id="status-indicator" class="status-indicator">
+        Position data updated
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-dark dark:bg-black text-white py-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <p>&copy; 2025 MQTT Position Tracker. All rights reserved.</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="#" class="hover:text-primary transition">
+                    <i class="fab fa-twitter"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Connect to WebSocket server
+        const socket = io();
+        
+        // Grid and point element references
+        const grid = document.getElementById('grid');
+        const point = document.createElement('div');
+        point.className = 'point';
+        grid.appendChild(point);
+        
+        // Coordinates display reference
+        const coordinatesDisplay = document.getElementById('coordinates');
+        const xValue = document.getElementById('x-value');
+        const yValue = document.getElementById('y-value');
+        const outOfBoundsMessage = document.getElementById('out-of-bounds');
+        const movementHistory = document.getElementById('movement-history');
+        const statusIndicator = document.getElementById('status-indicator');
+        
+        // Convert decimal range [0.00, 10.00] to grid position
+        const convertToGridPosition = (value) => {
+            // Calculate based on 384px grid (400 - 16px padding)
+            return Math.min(384, Math.max(0, (value / 10) * 384));
+        };
+        
+        // Add entry to movement history
+        const addHistoryEntry = (x, y) => {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            
+            const li = document.createElement('li');
+            li.className = 'py-2';
+            li.innerHTML = `
+                <div class="flex justify-between">
+                    <span class="text-gray-600 dark:text-gray-300">${timeString}</span>
+                    <span class="font-medium text-primary dark:text-blue-300">X: ${x.toFixed(2)}, Y: ${y.toFixed(2)}</span>
+                </div>
+            `;
+            
+            // Add to the beginning of the list
+            movementHistory.insertBefore(li, movementHistory.firstChild);
+            
+            // Limit history to 10 entries
+            if (movementHistory.children.length > 10) {
+                movementHistory.removeChild(movementHistory.lastChild);
+            }
+        };
+        
+        // Handle the received position data
+        socket.on('rtls', (data) => {
+            try {
+                // Extract x and y from the parsed data
+                let x = data.x;
+                let y = data.y;
+                
+                // Update the raw values display
+                xValue.textContent = x.toFixed(2);
+                yValue.textContent = y.toFixed(2);
+                
+                // Convert to grid position (0-384px)
+                const gridX = convertToGridPosition(x);
+                const gridY = convertToGridPosition(y);
+                
+                // Update point position (adjusted to center the point)
+                point.style.left = `${gridX - 10}px`;  // Subtracting half of point width
+                point.style.top = `${gridY - 10}px`;   // Subtracting half of point height
+                
+                // Update the coordinates display
+                coordinatesDisplay.innerHTML = `Position: (X: ${x.toFixed(2)}, Y: ${y.toFixed(2)})`;
+                
+                // Check if the coordinates are out of bounds
+                if (x < 0 || x > 10 || y < 0 || y > 10) {
+                    outOfBoundsMessage.innerText = "Position out of bounds! Keeping last valid position.";
+                } else {
+                    outOfBoundsMessage.innerText = ""; // Clear the message if position is valid
+                    
+                    // Add to history
+                    addHistoryEntry(x, y);
+                }
+                
+                // Show status indicator
+                statusIndicator.textContent = "Position data updated";
+                statusIndicator.style.display = "block";
+                setTimeout(() => {
+                    statusIndicator.style.display = "none";
+                }, 3000);
+            } catch (error) {
+                console.error("Error handling position data:", error);
+                outOfBoundsMessage.innerText = "Error processing position data!";
+            }
+        });
+        
+        // Handle error messages from the server
+        socket.on('error', (errorData) => {
+            outOfBoundsMessage.innerText = errorData.message || "An unexpected error occurred!";
+        });
+        
+        // Theme Toggle Functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Check for saved theme preference or system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        }
+        
+        // Initial theme setup
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (systemPrefersDark.matches) {
+            setTheme('dark');
+        }
+        
+        // Theme toggle event listener
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+    </script>
+</body>
+
+</html>
