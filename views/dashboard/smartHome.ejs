@@ -211,33 +211,55 @@
         </div>
     </main>
 
-    <!-- Project Description Modal -->
     <div id="project-modal" class="project-modal">
         <div class="project-modal-content">
             <span class="close-modal">&times;</span>
-            <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Smart Home Control Project</h2>
-            <div class="space-y-4 text-gray-700 dark:text-gray-300">
-                <p>This project is a comprehensive smart home control system that allows users to remotely manage various devices in their home through an intuitive web interface.</p>
-                
-                <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-white">Features:</h3>
-                <ul class="list-disc pl-5 space-y-2">
-                    <li>Control lighting, fans, and electrical appliances across multiple rooms</li>
-                    <li>Real-time device status updates via WebSocket and MQTT</li>
-                    <li>User authentication and session management</li>
-                    <li>Dark/light theme toggle with persistent user preferences</li>
-                    <li>Responsive design for mobile and desktop devices</li>
-                </ul>
-                
-                <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-white">Technology Stack:</h3>
-                <ul class="list-disc pl-5 space-y-2">
-                    <li>Frontend: HTML, CSS (Tailwind CSS), JavaScript (jQuery)</li>
-                    <li>Backend: Node.js with Express</li>
-                    <li>Real-time Communication: Socket.IO and MQTT</li>
-                    <li>Authentication: Express session management</li>
-                </ul>
-                
-                <h3 class="text-xl font-semibold mt-4 text-gray-800 dark:text-white">How It Works:</h3>
-                <p>The dashboard communicates with IoT devices through an MQTT broker. When you toggle a device in the interface, it sends a command through the server to the corresponding physical device. The system also receives status updates from the devices to ensure the interface always shows their current state.</p>
+            <h2 class="text-3xl font-bold mb-4 text-gray-800 dark:text-white">
+                <i class="fas fa-home mr-2"></i>Smart Home Dashboard - How It Works
+            </h2>
+            <!-- MQTT Connection Info -->
+            <div class="mqtt-info">
+                <h3 class="text-xl font-semibold mb-2 flex items-center">
+                    <i class="fas fa-wifi mr-2"></i>MQTT Broker Connection
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <strong>Broker:</strong> dev.coppercould.in<br>
+                        <strong>Port:</strong> 1883<br>
+                        <strong>Protocol:</strong> MQTT
+                    </div>
+                    <div>
+                        <strong>User:</strong> ajinkyamhetre2003@gmail.com<br>
+                        <strong>Namespace:</strong> /smartHome
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6 text-gray-700 dark:text-gray-300">
+            
+                <!-- MQTT Message Format -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 mt-4 text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-code mr-2"></i>MQTT Message Format
+                    </h3>
+                    <p class="mb-3">When you click a device, it sends a message in this format:</p>
+                    <div class="command-example">
+                        <strong>Topic Pattern:</strong>[user_email]/smartHome
+                        <br>
+                        <strong>Message Pattern:</strong> [room]/[device_number]/[state]
+                    </div>
+                    <h4 class="font-semibold mt-4 mb-2">Example Commands:</h4>
+                    <div class="space-y-2">
+      
+                        <div class="command-example">
+                            <strong>Topic Pattern:</strong>ajinkyamhetre2003@gmail.com/smartHome
+                            <br>
+                            <strong>Message Pattern:</strong> hall/2/on
+                            <br>
+                            <strong>Message Pattern:</strong> hall/2/off
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

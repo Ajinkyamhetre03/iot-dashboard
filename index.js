@@ -6,12 +6,16 @@ const cookieParser = require('cookie-parser')
 const session = require("express-session")
 const http = require('http')
 const socket = require('socket.io')
+const dotenv = require('dotenv')
+
+dotenv.config()
 
 const app = express()
 const server = http.createServer(app)
 const io = socket(server)
 
-mongoose.connect('mongodb+srv://coppercloud2023:sOoFdXTHbRmv6vQ8@cluster0.imnm6.mongodb.net/Dashboard_Master')
+
+mongoose.connect(process.env.MONGO_URL)
     .then(() => { console.log('connected DB') })
     .catch((e) => { console.log('error', e) })
 
@@ -19,7 +23,7 @@ mongoose.connect('mongodb+srv://coppercloud2023:sOoFdXTHbRmv6vQ8@cluster0.imnm6.
 app.set('view engine', "ejs")
 app.set('views', path.join(__dirname, 'views'))
 
-const brokerUrl = 'mqtt://dev.coppercloud.in'
+const brokerUrl = process.env.BROKER_URL || 'mqtt://localhost:1883'
 const mqttClient = mqtt.connect(brokerUrl)
 
 mqttClient.on('connect', () => {
@@ -59,5 +63,5 @@ app.use((req, res) => {
     res.status(404).render('404')
 })
 
-
-server.listen(3000, () => { console.log('listing on port 3000') })
+const PORT = process.env.PORT || 3000
+server.listen(PORT, () => { console.log(`listening on port ${PORT}`) })

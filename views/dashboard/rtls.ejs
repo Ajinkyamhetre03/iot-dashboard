@@ -63,6 +63,104 @@
             width: 50px;
             height: 50px;
         }
+
+        /* Project Modal Styles */
+        .project-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .project-modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 30px;
+            border: none;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .dark .project-modal-content {
+            background-color: #1f2937;
+            color: #f9fafb;
+        }
+
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 20px;
+            top: 15px;
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: #000;
+            text-decoration: none;
+        }
+
+        .dark .close-modal:hover,
+        .dark .close-modal:focus {
+            color: #fff;
+        }
+
+        .mqtt-info {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #3B82F6;
+        }
+
+        .dark .mqtt-info {
+            background-color: #374151;
+        }
+
+        .command-example {
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            border-left: 3px solid #10b981;
+            margin: 10px 0;
+        }
+
+        .dark .command-example {
+            background-color: #4b5563;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .tech-card {
+            background-color: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid #3B82F6;
+        }
+
+        .dark .tech-card {
+            background-color: #374151;
+        }
     </style>
 </head>
 
@@ -71,30 +169,30 @@
     <a href="/" class="back-button flex items-center justify-center bg-primary dark:bg-gray-700 text-white p-3 rounded-full hover:bg-blue-600 dark:hover:bg-gray-600 transition shadow-lg">
         <i class="fas fa-arrow-left text-xl"></i>
     </a>
-      <!-- Navbar -->
-      <nav class="bg-primary dark:bg-gray-800 text-white p-4 shadow-md">
+
+    <!-- Navbar -->
+    <nav class="bg-primary dark:bg-gray-800 text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
-          <div class="flex items-center">
-            <i class="fas fa-map-marker-alt text-3xl mr-3"></i>
-            <h1 class="text-xl font-bold">RTLS</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <h2 class="text-xl text-700">Welcome, <%= email %></h2>
-            <button
-              id="theme-toggle"
-              class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center"
-            >
-              <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
-            </button>
-            <a
-              href="/logout"
-              class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition"
-            >
-              <i class="fas fa-sign-out-alt mr-2"></i>Logout
-            </a>
-          </div>
+            <div class="flex items-center">
+                <i class="fas fa-map-marker-alt text-3xl mr-3"></i>
+                <h1 class="text-xl font-bold">RTLS Position Tracker</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                <button id="project-info-btn"
+                    class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-4 py-2 rounded transition text-gray-800 dark:text-white">
+                    <i class="fas fa-info-circle mr-2"></i>Project Info
+                </button>
+                <h2 class="text-xl text-700">Welcome, User</h2>
+                <button id="theme-toggle"
+                    class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center">
+                    <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
+                </button>
+                <a href="/logout" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+                </div>
         </div>
-      </nav>
+    </nav>
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8 flex-grow">
@@ -151,7 +249,169 @@
     <div id="status-indicator" class="status-indicator">
         Position data updated
     </div>
+
+    <!-- Project Information Modal -->
+    <div id="project-modal" class="project-modal">
+        <div class="project-modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 class="text-3xl font-bold mb-4 text-gray-800 dark:text-white">
+                <i class="fas fa-map-marker-alt mr-2"></i>Real-Time Location System (RTLS) - How It Works
+            </h2>
     
+            <!-- MQTT Connection Info -->
+            <div class="mqtt-info">
+                <h3 class="text-xl font-semibold mb-2 flex items-center">
+                    <i class="fas fa-wifi mr-2"></i>MQTT Broker Connection
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <strong>Broker:</strong> dev.coppercould.in<br>
+                        <strong>Port:</strong> 1883<br>
+                        <strong>Protocol:</strong> MQTT
+                    </div>
+                    <div>
+                        <strong>Topic:</strong> rtls/position<br>
+                        <strong>Data Format:</strong> JSON
+                    </div>
+                </div>
+            </div>
+    
+            <div class="space-y-6 text-gray-700 dark:text-gray-300">
+                <!-- System Overview -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-cogs mr-2"></i>System Overview
+                    </h3>
+                    <p class="mb-3">
+                        The Real-Time Location System (RTLS) uses advanced positioning technology to track and monitor
+                        the location of objects or people in real-time. This system combines MQTT communication protocol
+                        with precise coordinate mapping to provide accurate position data within a defined area.
+                    </p>
+                </div>
+    
+                <!-- How it Works -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-info-circle mr-2"></i>How It Works
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <i class="fas fa-satellite mr-3 mt-1 text-primary"></i>
+                            <p><strong>Position Detection:</strong> Uses various technologies like UWB (Ultra-Wideband),
+                                WiFi triangulation, or Bluetooth beacons to determine precise coordinates.</p>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-broadcast-tower mr-3 mt-1 text-primary"></i>
+                            <p><strong>Real-time Communication:</strong> Position data is transmitted via MQTT protocol
+                                ensuring low-latency, reliable communication between sensors and the dashboard.</p>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-map mr-3 mt-1 text-primary"></i>
+                            <p><strong>Coordinate Mapping:</strong> The system maps real-world coordinates (0-10 range)
+                                to a visual grid display for intuitive position visualization.</p>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fas fa-history mr-3 mt-1 text-primary"></i>
+                            <p><strong>Movement Tracking:</strong> Historical position data is logged and displayed,
+                                allowing for movement pattern analysis and tracking.</p>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Technical Specifications -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-microchip mr-2"></i>Technical Specifications
+                    </h3>
+                    <div class="tech-grid">
+                        <div class="tech-card">
+                            <h4 class="font-semibold mb-2">Coordinate System</h4>
+                            <p>Range: 0.00 - 10.00 (X,Y)<br>
+                                Precision: ±0.01 units<br>
+                                Update Rate: Real-time</p>
+                        </div>
+                        <div class="tech-card">
+                            <h4 class="font-semibold mb-2">Communication</h4>
+                            <p>Protocol: MQTT v3.1.1<br>
+                                QoS Level: 1 (At least once)<br>
+                                Encryption: TLS/SSL optional</p>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- MQTT Message Format -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-code mr-2"></i>MQTT Message Format
+                    </h3>
+                    <p class="mb-3">The system uses MQTT for real-time position data transmission:</p>
+    
+                    <h4 class="font-semibold mt-4 mb-2">Position Data Topic:</h4>
+                    <div class="command-example">
+                        <strong>Topic:</strong> rtls/position<br>
+                        <strong>Message:</strong> {"x": 5.23, "y": 7.45, "timestamp": "2025-01-01T12:00:00Z", "deviceId":
+                        "tracker_001"}
+                    </div>
+    
+                    <h4 class="font-semibold mt-4 mb-2">Example Position Updates:</h4>
+                    <div class="space-y-2">
+                        <div class="command-example">
+                            <strong>Moving Object:</strong> {"x": 3.45, "y": 6.78}<br>
+                            <strong>Stationary Object:</strong> {"x": 0.00, "y": 0.00}<br>
+                            <strong>Out of Bounds:</strong> {"x": -1.50, "y": 11.20}
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Applications -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-applications mr-2"></i>Applications & Use Cases
+                    </h3>
+                    <div class="tech-grid">
+                        <div class="tech-card">
+                            <h4 class="font-semibold mb-2">Industrial Tracking</h4>
+                            <p>Track equipment, vehicles, and personnel in warehouses, factories, and construction sites.
+                            </p>
+                        </div>
+                        <div class="tech-card">
+                            <h4 class="font-semibold mb-2">Healthcare</h4>
+                            <p>Monitor patient location, track medical equipment, and ensure staff safety in hospitals.</p>
+                        </div>
+                        <div class="tech-card">
+                            <h4 class="font-semibold mb-2">Smart Buildings</h4>
+                            <p>Optimize space utilization, automate lighting/HVAC, and enhance security systems.</p>
+                        </div>
+                        <div class="tech-card">
+                            <h4 class="font-semibold mb-2">Logistics</h4>
+                            <p>Track packages, optimize delivery routes, and monitor supply chain operations.</p>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Benefits -->
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+                        <i class="fas fa-star mr-2"></i>Key Benefits
+                    </h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Real-time position
+                            tracking with high accuracy</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Low-latency MQTT
+                            communication protocol</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Scalable architecture
+                            supporting multiple trackers</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Historical movement
+                            data for analysis</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Out-of-bounds
+                            detection and alerts</li>
+                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Web-based dashboard
+                            for remote monitoring</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Footer -->
     <footer class="bg-dark dark:bg-black text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
@@ -299,6 +559,25 @@
             const currentTheme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
             setTheme(currentTheme === 'dark' ? 'light' : 'dark');
         });
+
+    // Project Description Modal Functionality
+    const projectModal = document.getElementById('project-modal');
+    const projectInfoBtn = document.getElementById('project-info-btn');
+    const closeModal = document.querySelector('.close-modal');
+
+    projectInfoBtn.addEventListener('click', () => {
+        projectModal.style.display = 'block';
+    });
+
+    closeModal.addEventListener('click', () => {
+        projectModal.style.display = 'none';
+    });
+
+    window.addEventListener('click', (event) => {
+        if (event.target === projectModal) {
+            projectModal.style.display = 'none';
+        }
+    });
     </script>
 </body>
 

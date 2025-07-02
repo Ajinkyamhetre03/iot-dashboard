@@ -82,10 +82,94 @@
         width: 50px;
         height: 50px;
         border-radius: 50%;
-        display: flex;}
-        .back-button:hover {
-            background-color: #3B82F6;
-        }
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .back-button:hover {
+        background-color: #3B82F6;
+      }
+
+      /* Project Modal Styles */
+      .project-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+      }
+
+      .project-modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 30px;
+        border: none;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 800px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        position: relative;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .dark .project-modal-content {
+        background-color: #1f2937;
+        color: #f9fafb;
+      }
+
+      .close-modal {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        position: absolute;
+        right: 20px;
+        top: 15px;
+      }
+
+      .close-modal:hover,
+      .close-modal:focus {
+        color: #000;
+        text-decoration: none;
+      }
+
+      .dark .close-modal:hover,
+      .dark .close-modal:focus {
+        color: #fff;
+      }
+
+      .mqtt-info {
+        background-color: #f8fafc;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        border-left: 4px solid #3B82F6;
+      }
+
+      .dark .mqtt-info {
+        background-color: #374151;
+      }
+
+      .command-example {
+        background-color: #f1f5f9;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: 'Courier New', monospace;
+        border-left: 3px solid #10b981;
+        margin: 10px 0;
+      }
+
+      .dark .command-example {
+        background-color: #4b5563;
+      }
     </style>
   </head>
 
@@ -103,21 +187,22 @@
           <i class="fas fa-seedling mr-3 text-2xl"></i>
           <h1 class="text-xl font-bold">Soil Moisture Monitor</h1>
         </div>
-        <div class="flex items-center space-x-4">
-          <h2 class="text-xl text-700">Welcome, <%= email %></h2>
-          <button
-            id="theme-toggle"
-            class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center"
-          >
-            <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
-          </button>
-          <a
-            href="/logout"
-            class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition"
-          >
-            <i class="fas fa-sign-out-alt mr-2"></i>Logout
-          </a>
-        </div>
+        
+            <div class="flex items-center space-x-4">
+                <button id="project-info-btn"
+                  class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-4 py-2 rounded transition text-gray-800 dark:text-white">
+                  <i class="fas fa-info-circle mr-2"></i>Project Info
+                </button>
+                <h2 class="text-xl text-700">Welcome, <%= email %>
+                </h2>
+                <button id="theme-toggle"
+                  class="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 px-3 py-2 rounded transition flex items-center">
+                  <i id="theme-icon" class="fas fa-moon dark:fa-sun"></i>
+                </button>
+                <a href="/logout" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded transition">
+                  <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+                </div>
       </div>
     </nav>
 
@@ -212,6 +297,124 @@
       <!-- Status Indicator -->
       <div id="status-indicator" class="status-indicator">Status updated</div>
     </main>
+
+    <!-- Project Information Modal -->
+    <div id="project-modal" class="project-modal">
+      <div class="project-modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 class="text-3xl font-bold mb-4 text-gray-800 dark:text-white">
+          <i class="fas fa-seedling mr-2"></i>Soil Moisture Monitoring System - How It Works
+        </h2>
+    
+        <!-- MQTT Connection Info -->
+        <div class="mqtt-info">
+          <h3 class="text-xl font-semibold mb-2 flex items-center">
+            <i class="fas fa-wifi mr-2"></i>MQTT Broker Connection
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <strong>Broker:</strong> dev.coppercould.in<br>
+              <strong>Port:</strong> 1883<br>
+              <strong>Protocol:</strong> MQTT
+            </div>
+            <div>
+              <strong>User:</strong> ajinkyamhetre2003@gmail.com<br>
+              <strong>Namespace:</strong> /soilMoisture
+            </div>
+          </div>
+        </div>
+    
+        <div class="space-y-6 text-gray-700 dark:text-gray-300">
+          <!-- System Overview -->
+          <div>
+            <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+              <i class="fas fa-cogs mr-2"></i>System Overview
+            </h3>
+            <p class="mb-3">
+              This soil moisture monitoring system uses IoT sensors to continuously track soil moisture levels
+              and provides automated irrigation control. The system communicates via MQTT protocol for real-time
+              data transmission and remote control capabilities.
+            </p>
+          </div>
+    
+          <!-- How it Works -->
+          <div>
+            <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+              <i class="fas fa-info-circle mr-2"></i>How It Works
+            </h3>
+            <div class="space-y-3">
+              <div class="flex items-start">
+                <i class="fas fa-thermometer-half mr-3 mt-1 text-primary"></i>
+                <p><strong>Soil Sensors:</strong> Moisture sensors placed in the soil continuously measure moisture levels
+                  and send data to the central system.</p>
+              </div>
+              <div class="flex items-start">
+                <i class="fas fa-chart-line mr-3 mt-1 text-primary"></i>
+                <p><strong>Real-time Monitoring:</strong> Data is displayed on this dashboard with visual gauges showing
+                  current moisture percentages.</p>
+              </div>
+              <div class="flex items-start">
+                <i class="fas fa-bell mr-3 mt-1 text-primary"></i>
+                <p><strong>Smart Alerts:</strong> Set custom thresholds to receive alerts when moisture levels need
+                  attention.</p>
+              </div>
+              <div class="flex items-start">
+                <i class="fas fa-faucet mr-3 mt-1 text-primary"></i>
+                <p><strong>Irrigation Control:</strong> Remotely control irrigation systems through the dashboard or set up
+                  automated watering based on moisture levels.</p>
+              </div>
+            </div>
+          </div>
+    
+          <!-- MQTT Message Format -->
+          <div>
+            <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+              <i class="fas fa-code mr-2"></i>MQTT Message Format
+            </h3>
+            <p class="mb-3">The system uses MQTT for communication between sensors and the dashboard:</p>
+    
+            <h4 class="font-semibold mt-4 mb-2">Sensor Data Topic:</h4>
+            <div class="command-example">
+              <strong>Topic:</strong> [user_email]/soilMoisture/data<br>
+              <strong>Message:</strong> {"moisture": 45, "temperature": 22, "timestamp": "2025-01-01T12:00:00Z"}
+            </div>
+    
+            <h4 class="font-semibold mt-4 mb-2">Irrigation Control:</h4>
+            <div class="command-example">
+              <strong>Topic:</strong> [user_email]/soilMoisture/control<br>
+              <strong>Message:</strong> {"action": "start_irrigation", "duration": 300}
+            </div>
+    
+            <h4 class="font-semibold mt-4 mb-2">Example Topics for this account:</h4>
+            <div class="space-y-2">
+              <div class="command-example">
+                <strong>Data Topic:</strong> ajinkyamhetre2003@gmail.com/soilMoisture/data<br>
+                <strong>Control Topic:</strong> ajinkyamhetre2003@gmail.com/soilMoisture/control
+              </div>
+            </div>
+          </div>
+    
+          <!-- Benefits -->
+          <div>
+            <h3 class="text-xl font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
+              <i class="fas fa-leaf mr-2"></i>Benefits
+            </h3>
+            <ul class="space-y-2">
+              <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Water conservation through
+                precise irrigation</li>
+              <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Improved plant health and crop
+                yields</li>
+              <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Remote monitoring and control
+                capabilities</li>
+              <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Automated alerts prevent
+                over/under watering</li>
+              <li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>Data logging for trend analysis
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer class="bg-dark dark:bg-black text-white py-6 mt-8">
@@ -451,6 +654,25 @@
           document.getElementById("last-updated").textContent = "On load";
         }
       }
+
+  // Project Description Modal Functionality
+  const projectModal = document.getElementById('project-modal');
+  const projectInfoBtn = document.getElementById('project-info-btn');
+  const closeModal = document.querySelector('.close-modal');
+
+  projectInfoBtn.addEventListener('click', () => {
+    projectModal.style.display = 'block';
+  });
+
+  closeModal.addEventListener('click', () => {
+    projectModal.style.display = 'none';
+  });
+
+  window.addEventListener('click', (event) => {
+    if (event.target === projectModal) {
+      projectModal.style.display = 'none';
+    }
+  });
     </script>
   </body>
 </html>

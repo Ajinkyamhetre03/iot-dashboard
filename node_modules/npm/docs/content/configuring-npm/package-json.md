@@ -378,7 +378,7 @@ file in the `bin` field, so it is available to run by `name` or `name.cmd` (on
 Windows PowerShell). When this package is installed as a dependency in another
 package, the file will be linked where it will be available to that package
 either directly by `npm exec` or by name in other scripts when invoking them
-via `npm run-script`.
+via `npm run`.
 
 
 For example, myapp could have this:
@@ -589,7 +589,7 @@ had the following:
 }
 ```
 
-It could also have a "start" command that referenced the
+It could also have a "start" script that referenced the
 `npm_package_config_port` environment variable.
 
 ### dependencies
@@ -749,7 +749,7 @@ that require npm installing where you don't want to hit an external server,
 but should not be used when publishing your package to the public registry.
 
 *note*: Packages linked by local path will not have their own
-dependencies installed when `npm install` is ran in this case.  You must
+dependencies installed when `npm install` is run.  You must
 run `npm install` from inside the local path itself.
 
 ### devDependencies
@@ -951,7 +951,7 @@ resolution. Published packages may dictate their resolutions by pinning
 dependencies or using an
 [`npm-shrinkwrap.json`](/configuring-npm/npm-shrinkwrap-json) file.
 
-To make sure the package `foo` is always installed as version `1.0.0` no matter
+To make sure the package `@npm/foo` is always installed as version `1.0.0` no matter
 what version your dependencies rely on:
 
 ```json
@@ -979,7 +979,7 @@ also `1.0.0`:
 ```
 
 To only override `@npm/foo` to be `1.0.0` when it's a child (or grandchild, or great
-grandchild, etc) of the package `bar`:
+grandchild, etc) of the package `@npm/bar`:
 
 ```json
 {
